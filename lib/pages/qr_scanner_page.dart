@@ -1,9 +1,12 @@
-// lib/pages/qr_scanner_page.dart
 import 'package:flutter/material.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
 import 'package:image_picker/image_picker.dart';
 
 class QRScannerPage extends StatefulWidget {
+  final Function(QRViewController) onCameraCreated;
+
+  QRScannerPage({required this.onCameraCreated});
+
   @override
   _QRScannerPageState createState() => _QRScannerPageState();
 }
@@ -29,18 +32,17 @@ class _QRScannerPageState extends State<QRScannerPage> with WidgetsBindingObserv
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (controller != null) {
       if (state == AppLifecycleState.paused) {
-        controller?.pauseCamera(); // Pausar la cámara cuando la aplicación esté en segundo plano
-      } else if (state == AppLifecycleState.resumed) {
-        controller?.resumeCamera(); // Reanudar la cámara al regresar a la pantalla de escaneo
+        controller?.pauseCamera();
+      } else if (state == AppLifecycleState.resumed && ModalRoute.of(context)?.isCurrent == true) {
+        controller?.resumeCamera();
       }
     }
   }
 
   void _onQRViewCreated(QRViewController controller) {
     this.controller = controller;
-    controller.scannedDataStream.listen((scanData) {
-      Navigator.pop(context, scanData.code);
-    });
+    widget.onCameraCreated(controller);
+    controller.pauseCamera(); // Pausamos la cámara inmediatamente después de crear el controlador
   }
 
   Future<void> _pickImageFromGallery() async {
@@ -59,7 +61,10 @@ class _QRScannerPageState extends State<QRScannerPage> with WidgetsBindingObserv
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.close, color: Colors.black),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () {
+            controller?.pauseCamera();
+            Navigator.of(context).pop();
+          },
         ),
       ),
       body: Column(
