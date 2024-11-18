@@ -1,4 +1,3 @@
-// lib/pages/companies_page.dart
 import 'package:flutter/material.dart';
 
 class CompaniesPage extends StatelessWidget {
