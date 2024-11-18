@@ -32,6 +32,10 @@ class NavBar extends StatelessWidget {
           icon: Icon(Icons.business),
           label: 'Empresas',
         ),
+        BottomNavigationBarItem( // Nuevo ítem del NavBar
+          icon: Icon(Icons.add_circle),
+          label: 'Servicios',
+        ),
       ],
       selectedItemColor: Colors.white,
       unselectedItemColor: Colors.grey,

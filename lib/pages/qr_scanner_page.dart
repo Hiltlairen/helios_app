@@ -24,7 +24,7 @@ class _QRScannerPageState extends State<QRScannerPage> with WidgetsBindingObserv
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    controller?.dispose();
+    controller?.dispose(); // Libera recursos de la cámara al salir
     super.dispose();
   }
 
@@ -32,24 +32,26 @@ class _QRScannerPageState extends State<QRScannerPage> with WidgetsBindingObserv
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (controller != null) {
       if (state == AppLifecycleState.paused) {
-        controller?.pauseCamera();
-      } else if (state == AppLifecycleState.resumed && ModalRoute.of(context)?.isCurrent == true) {
-        controller?.resumeCamera();
+        controller?.pauseCamera(); // Pausa la cámara al minimizar la app
+      } else if (state == AppLifecycleState.resumed) {
+        controller?.resumeCamera(); // Reanuda la cámara al volver
       }
     }
   }
 
   void _onQRViewCreated(QRViewController controller) {
     this.controller = controller;
-    widget.onCameraCreated(controller);
-    controller.pauseCamera(); // Pausamos la cámara inmediatamente después de crear el controlador
+    widget.onCameraCreated(controller); // Notifica a MainScreen
+    controller.scannedDataStream.listen((scanData) {
+      Navigator.pop(context, scanData.code);
+    });
   }
 
   Future<void> _pickImageFromGallery() async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
-      // Lógica para escanear el código QR de la imagen seleccionada si es necesario
+      // Procesa la imagen si necesitas escanear un QR desde la galería
     }
   }
 
