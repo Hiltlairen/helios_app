@@ -9,7 +9,6 @@ class MapPage extends StatefulWidget {
 class _MapPageState extends State<MapPage> {
   late GoogleMapController _mapController;
 
-  // Coordenadas iniciales del mapa
   final LatLng _initialPosition = LatLng(-16.4897, -68.1193); // Ejemplo: La Paz, Bolivia
 
   void _onMapCreated(GoogleMapController controller) {
@@ -20,7 +19,7 @@ class _MapPageState extends State<MapPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Mapa de Google'),
+        title: Text('Mapa'),
       ),
       body: GoogleMap(
         onMapCreated: _onMapCreated,
@@ -28,7 +27,7 @@ class _MapPageState extends State<MapPage> {
           target: _initialPosition,
           zoom: 12.0,
         ),
-        myLocationEnabled: true, // Mostrar botón de ubicación actual
+        myLocationEnabled: true,
         myLocationButtonEnabled: true,
         mapType: MapType.normal,
       ),
