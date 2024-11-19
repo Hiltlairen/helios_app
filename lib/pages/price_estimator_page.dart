@@ -19,176 +19,287 @@ class PriceEstimatorPage extends StatefulWidget {
 }
 
 class _PriceEstimatorPageState extends State<PriceEstimatorPage> {
-  String? selectedDimension;
-  int quantity = 1;
+  String? selectedProductType;
+  String? originCity;
+  String? destinationCity;
+  double? weight;
   double? length;
   double? height;
   double? width;
+  int? quantity = 1;
+  double? quotationInBolivianos;
 
-  final Map<String, List<double>> predefinedDimensions = {
-    'Libro': [22, 16, 11],
-    'Par de zapatos': [33, 15, 16],
-    'Freidora o Mini Nevera': [50, 38, 42],
-    'Televisor 65"': [164, 100, 20],
-  };
+  final List<String> boliviaDepartments = [
+    'La Paz',
+    'Cochabamba',
+    'Santa Cruz',
+    'Oruro',
+    'Potosí',
+    'Chuquisaca',
+    'Tarija',
+    'Beni',
+    'Pando',
+  ];
 
-  void adjustQuantity(bool increment) {
-    setState(() {
-      if (increment) {
-        quantity++;
-      } else if (quantity > 1) {
-        quantity--;
-      }
-    });
+  double calculateQuotationInBolivianos() {
+    double baseRate = selectedProductType == 'documentos' ? 20.0 : 40.0;
+    double weightRate = weight != null ? weight! * 2.5 : 0;
+    double volumeRate = 0;
+
+    if (selectedProductType == 'paquete' &&
+        length != null &&
+        height != null &&
+        width != null) {
+      double volume = (length! * height! * width!) / 5000;
+      volumeRate = volume * 4.0;
+    }
+
+    double quantityRate = (quantity ?? 1) * 3.0;
+
+    return baseRate + weightRate + volumeRate + quantityRate;
   }
 
-  void selectPresetDimensions(String dimensionLabel) {
-    setState(() {
-      selectedDimension = dimensionLabel;
-      List<double> dimensions = predefinedDimensions[dimensionLabel]!;
-      length = dimensions[0];
-      width = dimensions[1];
-      height = dimensions[2];
-    });
+  void calculateQuotation() {
+    if (_validateFields()) {
+      setState(() {
+        quotationInBolivianos = calculateQuotationInBolivianos();
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Por favor, complete todos los campos requeridos.'),
+      ));
+    }
+  }
+
+  bool _validateFields() {
+    if (selectedProductType == null ||
+        originCity == null ||
+        destinationCity == null ||
+        weight == null ||
+        quantity == null ||
+        (selectedProductType == 'paquete' &&
+            (length == null || height == null || width == null))) {
+      return false;
+    }
+    return true;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Estimador de Precio'),
+        backgroundColor: Colors.blueAccent,
+        title:
+            Text('Cotización de Envío', style: TextStyle(color: Colors.white)),
+        centerTitle: true,
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              '¿No estás seguro de las medidas?',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            Text(
-              'Selecciona la medida de la caja que más se parezca al envío que quieres cotizar. Recuerda que son medidas de referencia.',
-              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-            ),
-            SizedBox(height: 16),
-            GridView.builder(
-              shrinkWrap: true,
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisSpacing: 8,
-                crossAxisSpacing: 8,
-                childAspectRatio: 1.6,
-              ),
-              itemCount: predefinedDimensions.keys.length,
-              itemBuilder: (context, index) {
-                String dimensionLabel =
-                    predefinedDimensions.keys.elementAt(index);
-                List<double> dimensionValues =
-                    predefinedDimensions[dimensionLabel]!;
-                bool isSelected = selectedDimension == dimensionLabel;
-
-                return GestureDetector(
-                  onTap: () => selectPresetDimensions(dimensionLabel),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                          color: isSelected ? Colors.blue : Colors.grey),
-                      borderRadius: BorderRadius.circular(8),
-                      color: isSelected ? Colors.blue.shade100 : Colors.white,
-                    ),
-                    padding: EdgeInsets.all(8),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+            Card(
+              elevation: 6.0,
+              margin: EdgeInsets.symmetric(vertical: 8.0),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Tipo de Producto',
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold)),
+                    SizedBox(height: 8),
+                    Row(
                       children: [
-                        Icon(Icons.inventory_2,
-                            size: 40, color: Colors.grey[700]),
-                        SizedBox(height: 8),
-                        Text(
-                          dimensionLabel,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                selectedProductType = 'paquete';
+                              });
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: selectedProductType == 'paquete'
+                                    ? Colors.blueAccent
+                                    : Colors.grey[200],
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                              padding: EdgeInsets.all(12.0),
+                              child: Center(
+                                child: Text(
+                                  'Paquete',
+                                  style: TextStyle(
+                                    color: selectedProductType == 'paquete'
+                                        ? Colors.white
+                                        : Colors.black,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
                           ),
                         ),
-                        SizedBox(height: 4),
-                        Text(
-                          '${dimensionValues[0].toInt()} x ${dimensionValues[1].toInt()} x ${dimensionValues[2].toInt()}',
-                          style: TextStyle(
-                            color: Colors.grey[700],
+                        SizedBox(width: 8.0),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                selectedProductType = 'documentos';
+                                length = null;
+                                width = null;
+                                height = null;
+                              });
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: selectedProductType == 'documentos'
+                                    ? Colors.blueAccent
+                                    : Colors.grey[200],
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                              padding: EdgeInsets.all(12.0),
+                              child: Center(
+                                child: Text(
+                                  'Documentos',
+                                  style: TextStyle(
+                                    color: selectedProductType == 'documentos'
+                                        ? Colors.white
+                                        : Colors.black,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ],
                     ),
-                  ),
-                );
-              },
-            ),
-            SizedBox(height: 16),
-            if (selectedDimension != null) ...[
-              TextField(
-                decoration: InputDecoration(labelText: 'Largo (cm)'),
-                controller: TextEditingController(text: length?.toString()),
-                readOnly: true,
-              ),
-              TextField(
-                decoration: InputDecoration(labelText: 'Alto (cm)'),
-                controller: TextEditingController(text: height?.toString()),
-                readOnly: true,
-              ),
-              TextField(
-                decoration: InputDecoration(labelText: 'Ancho (cm)'),
-                controller: TextEditingController(text: width?.toString()),
-                readOnly: true,
-              ),
-            ],
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Cantidad',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  ],
                 ),
-                Row(
+              ),
+            ),
+            Card(
+              elevation: 6.0,
+              margin: EdgeInsets.symmetric(vertical: 8.0),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
                   children: [
-                    IconButton(
-                      icon: Icon(Icons.remove_circle_outline),
-                      onPressed: () => adjustQuantity(false),
+                    DropdownButtonFormField<String>(
+                      decoration:
+                          InputDecoration(labelText: 'Ciudad de Origen'),
+                      value: originCity,
+                      items: boliviaDepartments.map((department) {
+                        return DropdownMenuItem(
+                          value: department,
+                          child: Text(department),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        if (value != destinationCity) {
+                          setState(() {
+                            originCity = value;
+                          });
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text(
+                                'La ciudad de origen y destino deben ser diferentes.'),
+                          ));
+                        }
+                      },
                     ),
-                    Text(
-                      quantity.toString(),
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.add_circle_outline),
-                      onPressed: () => adjustQuantity(true),
+                    DropdownButtonFormField<String>(
+                      decoration:
+                          InputDecoration(labelText: 'Ciudad de Destino'),
+                      value: destinationCity,
+                      items: boliviaDepartments.map((department) {
+                        return DropdownMenuItem(
+                          value: department,
+                          child: Text(department),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        if (value != originCity) {
+                          setState(() {
+                            destinationCity = value;
+                          });
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text(
+                                'La ciudad de origen y destino deben ser diferentes.'),
+                          ));
+                        }
+                      },
                     ),
                   ],
                 ),
-              ],
+              ),
             ),
-            Spacer(),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text(
-                        'Cotización solicitada para $selectedDimension x $quantity'),
-                  ));
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.grey[300],
-                  foregroundColor: Colors.black54,
-                  padding: EdgeInsets.symmetric(vertical: 16),
+            if (selectedProductType == 'paquete')
+              Card(
+                elevation: 6.0,
+                margin: EdgeInsets.symmetric(vertical: 8.0),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      TextField(
+                        decoration: InputDecoration(labelText: 'Largo (cm)'),
+                        keyboardType: TextInputType.number,
+                        onChanged: (value) => length = double.tryParse(value),
+                      ),
+                      TextField(
+                        decoration: InputDecoration(labelText: 'Alto (cm)'),
+                        keyboardType: TextInputType.number,
+                        onChanged: (value) => height = double.tryParse(value),
+                      ),
+                      TextField(
+                        decoration: InputDecoration(labelText: 'Ancho (cm)'),
+                        keyboardType: TextInputType.number,
+                        onChanged: (value) => width = double.tryParse(value),
+                      ),
+                    ],
+                  ),
                 ),
-                child: Text(
-                  'Solicitar Cotización',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            TextField(
+              decoration: InputDecoration(labelText: 'Peso (kg)'),
+              keyboardType: TextInputType.number,
+              onChanged: (value) => weight = double.tryParse(value),
+            ),
+            TextField(
+              decoration: InputDecoration(labelText: 'Cantidad'),
+              keyboardType: TextInputType.number,
+              onChanged: (value) => quantity = int.tryParse(value),
+            ),
+            SizedBox(height: 16),
+            Center(
+              child: ElevatedButton(
+                onPressed: calculateQuotation,
+                child: Text('Calcular Cotización'),
+                style: ElevatedButton.styleFrom(
+                  //primary: Colors.blueAccent, // Color de fondo
+                  padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                  textStyle:
+                      TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
+            if (quotationInBolivianos != null)
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16.0),
+                  child: Text(
+                    'Cotización: Bs. ${quotationInBolivianos!.toStringAsFixed(2)}',
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blueAccent),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
